@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "bibtex-utils"
+version = "0.1.0"
+description = "Command-line tools for working with .bib files, e.g. export to CSV and show which entries are cited in other .tex files"
+authors = ["Martin Gruber <martin.gruber1@web.de>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/gruberma/bibtex-utils"
+keywords = [
+ "latex",
+ "bibtex"
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "^2.2.3"
+fire = "^0.7.0"
+requests = "^2.32.3"
+bibtexparser = "^1.4.3"
+pylatexenc = "^2.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+flake8 = "^7.1.1"
+mypy = "^1.14.1"
+pylint = "^3.3.3"
+black = "^24.10.0"
+
+[tool.poetry.scripts]
+bibtex_utils = "bibtex_utils:cli"
+
+[tool.black]
+line-length = 100
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
