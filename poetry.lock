@@ -878,18 +878,21 @@ files = [
 tests = ["pytest"]
 
 [[package]]
-name = "pydocstring"
-version = "0.2.1"
-description = "Package providing autocompletion capabilities for python docstrings"
+name = "pydocstyle"
+version = "6.3.0"
+description = "Python docstring style checker"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 files = [
-    {file = "pydocstring-0.2.1-py2.py3-none-any.whl", hash = "sha256:1c23416f67598232bb1ea6d01b95288a6b3fbc17ad001fc4af5050c96cc177eb"},
-    {file = "pydocstring-0.2.1.tar.gz", hash = "sha256:af28e075d525cd8e806292c7dfff71f04c233ed182881afbf267de4297bd9cc3"},
+    {file = "pydocstyle-6.3.0-py3-none-any.whl", hash = "sha256:118762d452a49d6b05e194ef344a55822987a462831ade91ec5c06fd2169d019"},
+    {file = "pydocstyle-6.3.0.tar.gz", hash = "sha256:7ce43f0c0ac87b07494eb9c0b462c0b73e6ff276807f204d6b53edc72b7e44e1"},
 ]
 
 [package.dependencies]
-parso = ">=0.1.1"
+snowballstemmer = ">=2.2.0"
+
+[package.extras]
+toml = ["tomli (>=1.2.3)"]
 
 [[package]]
 name = "pygments"
@@ -1052,6 +1055,17 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
     {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
     {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
+]
+
+[[package]]
+name = "snowballstemmer"
+version = "2.2.0"
+description = "This package provides 29 stemmers for 28 languages generated from Snowball algorithms."
+optional = false
+python-versions = "*"
+files = [
+    {file = "snowballstemmer-2.2.0-py2.py3-none-any.whl", hash = "sha256:c8e1716e83cc398ae16824e5572ae04e0d9fc2c6b985fb0f900f5f0c96ecba1a"},
+    {file = "snowballstemmer-2.2.0.tar.gz", hash = "sha256:09b16deb8547d3412ad7b590689584cd0fe25ec8db3be37788be3810cbf19cb1"},
 ]
 
 [[package]]
@@ -1273,4 +1287,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "8e1dbbbfb05ba0db608c282b5d1a3ee6313c823c3d1ee69290cc846f58898135"
+content-hash = "7e784fc954894cd80772ff2281c0f8962a4b8cb0b846588b6c91336414a6f29d"

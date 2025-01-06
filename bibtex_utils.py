@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring
+# noqa: D100
 
 from pathlib import Path
 from typing import List, Optional, Set, Callable
@@ -45,8 +46,11 @@ def extract_citation_ids(latex_content: str) -> Set[str]:
 def get_all_cites_in_dir(tex_dir: str) -> Set[str]:
     """Search for all .tex files in `tex_dir` and extracts all cites.
 
-    tex_dir: path to directory containing .tex files
-    return: list of cited references
+    Args:
+        tex_dir: path to directory containing .tex files
+
+    Returns:
+        list of cited references
     """
     all_cites: Set[str] = set()
     all_tex_files = list(Path(tex_dir).rglob("*.tex"))
@@ -63,8 +67,11 @@ def get_all_cites_in_dir(tex_dir: str) -> Set[str]:
 def bib_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
     """Convert bibtex file to table.
 
-    bibtex_file: path to bibtex file
-    return: pandas DataFrame
+    Args:
+        bibtex_file: path to bibtex file
+
+    Return:
+        pandas DataFrame
     """
     bp = BibTexParser(interpolate_strings=False, ignore_nonstandard_types=False)
 
@@ -93,7 +100,15 @@ def bib_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
 
 
 def merge_bib_and_cites(bibtex_df: pd.DataFrame, cites: List[str]) -> pd.DataFrame:
-    """Add a column 'cites' to `bibtex_df`, indicating if the entry is part of the `cites` list."""
+    """Add a column 'cites' to `bibtex_df`, indicating if the entry is part of the `cites` list.
+
+    Args:
+        bibtex_df: pandas dataframe containing bibtex information
+        cites: list of IDs of cited entries
+
+    Returns:
+        same pandas dataframe as `bibtex_df` with new column 'cites'.
+    """
     cites_df = pd.DataFrame({"ID": cites})
     cites_df["cited"] = True
     cites_df["ID"] = cites_df["ID"].astype(object)
@@ -111,15 +126,16 @@ def bib_to_csv(
 ) -> str:
     """Convert .bib file to csv. Optionally include citations from .tex files in a `tex_dir`.
 
-    :bib_file: path to bibtex file
-    :tex_dir: path to directory containing .tex files with citations
-    :verify_urls: sends http requests to urls mentioned in `bib_file` and report return status
-    :drop_cols: list of columns to drop
+    Args:
+        bib_file: path to bibtex file
+        tex_dir: path to directory containing .tex files with citations
+        verify_urls: sends http requests to urls mentioned in `bib_file` and report return status
+        drop_cols: list of columns to drop
 
-    :returns: table in CSV format containing all information from `bib_file`.
+    Returns:
+        table in CSV format containing all information from `bib_file`.
 
     EXAMPLE usage in combination with visidata:
-
         `bibtex_utils BIBTEX_FILE DIR | vd --filetype=csv`
     """
     bib_df = bib_to_df(bib_file, verify_urls=verify_urls)
@@ -139,6 +155,7 @@ def bib_to_csv(
 
 
 def main():
-    """Main entrypoint"""
+    # noqa: D401
+    """Main entrypoint."""
     exposed_functions = [bib_to_csv, get_all_cites_in_dir]
     Fire({func.__name__: func for func in exposed_functions})
