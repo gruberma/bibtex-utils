@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 from pathlib import Path
 from typing import List, Optional, Set, Callable
@@ -13,6 +13,14 @@ from bibtexparser.bparser import BibTexParser
 
 
 def extract_citation_ids(latex_content: str) -> Set[str]:
+    """Extract IDs of all cited items in `latex_content`.
+
+    Args:
+        latex_content: latex code
+
+    Returns:
+        Set of citation IDs
+    """
     # Split the content into lines
     lines = latex_content.split('\n')
 
@@ -44,7 +52,7 @@ def get_all_cites_in_dir(tex_dir: str) -> Set[str]:
     all_tex_files = list(Path(tex_dir).rglob("*.tex"))
 
     for tex_file_name in all_tex_files:
-        with open(tex_file_name) as file_:
+        with open(tex_file_name) as file_:  # pylint: disable=unspecified-encoding
             tex_content = file_.read()
         cites = extract_citation_ids(tex_content)
         all_cites = all_cites.union(cites)
@@ -71,7 +79,7 @@ def bib_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
         bib_df["url_response_status"] = (
             bib_df["url_response"].dropna().apply(lambda x: x.status_code)
         )
-        bib_df["url_response_content"] = bib_df["url_response"].dropna().apply(lambda x: x._content)
+        bib_df["url_response_content"] = bib_df["url_response"].dropna().apply(lambda x: x.content)
 
     # -- Reorder cols
     front_cols = ["ID", "ENTRYTYPE", "title", "author", "booktitle", "journal", "year"]
@@ -85,7 +93,7 @@ def bib_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
 
 
 def merge_bib_and_cites(bibtex_df: pd.DataFrame, cites: List[str]) -> pd.DataFrame:
-    """ """
+    """Add a column 'cites' to `bibtex_df`, indicating if the entry is part of the `cites` list."""
     cites_df = pd.DataFrame({"ID": cites})
     cites_df["cited"] = True
     cites_df["ID"] = cites_df["ID"].astype(object)
@@ -105,7 +113,7 @@ def bib_to_csv(
 
     :bib_file: path to bibtex file
     :tex_dir: path to directory containing .tex files with citations
-    :verify_urls: sends http requests urls mentioned in `bib_file` and report return code and message
+    :verify_urls: sends http requests to urls mentioned in `bib_file` and report return status
     :drop_cols: list of columns to drop
 
     :returns: table in CSV format containing all information from `bib_file`.
@@ -131,5 +139,6 @@ def bib_to_csv(
 
 
 def main():
+    """Main entrypoint"""
     exposed_functions = [bib_to_csv, get_all_cites_in_dir]
     Fire({func.__name__: func for func in exposed_functions})
