@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Callable
 import logging
 import re
 
@@ -19,7 +19,7 @@ def extract_citation_ids(latex_content: str) -> Set[str]:
     # Define the regex pattern for capturing LaTeX citation IDs
     pattern = r'\\cite\{([^}]+)\}'
 
-    citation_ids = set()
+    citation_ids: Set[str] = set()
 
     for line in lines:
         # Remove inline comments
@@ -40,7 +40,7 @@ def get_all_cites_in_dir(tex_dir: str) -> Set[str]:
     tex_dir: path to directory containing .tex files
     return: list of cited references
     """
-    all_cites = set()
+    all_cites: Set[str] = set()
     all_tex_files = list(Path(tex_dir).rglob("*.tex"))
 
     for tex_file_name in all_tex_files:
@@ -66,7 +66,8 @@ def bib_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
 
     if verify_urls:
         logging.info("Verifing URLs")
-        bib_df["url_response"] = bib_df["url"].dropna().apply(requests.get)
+        requests_get: Callable = requests.get
+        bib_df["url_response"] = bib_df["url"].dropna().apply(requests_get)
         bib_df["url_response_status"] = (
             bib_df["url_response"].dropna().apply(lambda x: x.status_code)
         )
