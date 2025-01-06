@@ -22,22 +22,22 @@ def extract_citation_ids(latex_content: str) -> Set[str]:
         Set of citation IDs
     """
     # Split the content into lines
-    lines = latex_content.split('\n')
+    lines = latex_content.split("\n")
 
     # Define the regex pattern for capturing LaTeX citation IDs
-    pattern = r'\\cite\{([^}]+)\}'
+    pattern = r"\\cite\{([^}]+)\}"
 
     citation_ids: Set[str] = set()
 
     for line in lines:
         # Remove inline comments
-        line = re.sub(r'(?<!\\)%.*', '', line)
+        line = re.sub(r"(?<!\\)%.*", "", line)
 
         matches = re.findall(pattern, line)
 
         # Split the matched citation keys by comma and add them to the set
         for match in matches:
-            citation_ids = citation_ids.union({item.strip() for item in match.split(',')})
+            citation_ids = citation_ids.union({item.strip() for item in match.split(",")})
 
     return citation_ids
 
