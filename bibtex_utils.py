@@ -121,10 +121,10 @@ def bib_to_csv(
         bib_df = bib_df.drop(columns=drop_cols)
 
     if tex_dir is not None:
-        df = bib_df
-    else:
         cites = list(get_all_cites_in_dir(tex_dir))
         df = merge_bib_and_cites(bib_df, cites)
+    else:
+        df = bib_df
 
     return df.to_csv(index=False)
 
