@@ -40,9 +40,9 @@ jobs:
         run: |
           poetry run pylint *.py
 
-      - name: Run flake8
+      - name: Run ruff
         run: |
-          poetry run flake8 *.py
+          poetry run ruff check
 
       - name: Run black check
         run: |
