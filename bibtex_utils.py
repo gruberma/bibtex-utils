@@ -3,43 +3,35 @@
 from pathlib import Path
 from typing import List, Optional, Set
 import logging
+import re
 
 import requests
 from fire import Fire
 
 import pandas as pd
 from bibtexparser.bparser import BibTexParser
-from pylatexenc.latexwalker import (
-    LatexWalker,
-    LatexMacroNode,
-    LatexCharsNode,
-    LatexCommentNode,
-)
 
 
-def get_cites_from_str(tex_content: str) -> List[str]:
-    r"""Given latex code, extract all references cited via `\cite{...}`.
+def extract_citation_ids(latex_content: str) -> Set[str]:
+    # Split the content into lines
+    lines = latex_content.split('\n')
 
-    Args:
-        tex_content: string containing tex
+    # Define the regex pattern for capturing LaTeX citation IDs
+    pattern = r'\\cite\{([^}]+)\}'
 
-    Return:
-        list of cited references
-    """
-    w = LatexWalker(tex_content)
-    (nodelist, pos, len_) = w.get_latex_nodes(pos=0)
+    citation_ids = set()
 
-    cites = []
-    for node in nodelist:
-        if isinstance(node, LatexMacroNode) and node.macroname == "cite":
-            args = node.nodeargd.argnlist[3].nodelist
-            for arg in args:
-                if isinstance(arg, LatexCharsNode) and not isinstance(arg, LatexCommentNode):
-                    for cite in arg.chars.strip().split(","):
-                        cites.append(cite.strip())
+    for line in lines:
+        # Remove inline comments
+        line = re.sub(r'(?<!\\)%.*', '', line)
 
-    cites = [cite for cite in cites if cite != ""]
-    return cites
+        matches = re.findall(pattern, line)
+
+        # Split the matched citation keys by comma and add them to the set
+        for match in matches:
+            citation_ids = citation_ids.union({item.strip() for item in match.split(',')})
+
+    return citation_ids
 
 
 def get_all_cites_in_dir(tex_dir: str) -> Set[str]:
@@ -48,16 +40,16 @@ def get_all_cites_in_dir(tex_dir: str) -> Set[str]:
     tex_dir: path to directory containing .tex files
     return: list of cited references
     """
-    all_cites = []
+    all_cites = set()
     all_tex_files = list(Path(tex_dir).rglob("*.tex"))
 
     for tex_file_name in all_tex_files:
         with open(tex_file_name) as file_:
             tex_content = file_.read()
-        cites = get_cites_from_str(tex_content)
-        all_cites.extend(cites)
+        cites = extract_citation_ids(tex_content)
+        all_cites = all_cites.union(cites)
 
-    return set(all_cites)
+    return all_cites
 
 
 def bib_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
