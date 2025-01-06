@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 import logging
 
 import requests
@@ -11,19 +11,21 @@ import pandas as pd
 from bibtexparser.bparser import BibTexParser
 from pylatexenc.latexwalker import (
     LatexWalker,
-    LatexEnvironmentNode,
     LatexMacroNode,
     LatexCharsNode,
     LatexCommentNode,
 )
 
 
-def get_cites(tex_content: str) -> List[str]:
-    """
-    tex_content: string containing tex
-    return: list of cited references
-    """
+def get_cites_from_str(tex_content: str) -> List[str]:
+    r"""Given latex code, extract all references cited via `\cite{...}`.
 
+    Args:
+        tex_content: string containing tex
+
+    Return:
+        list of cited references
+    """
     w = LatexWalker(tex_content)
     (nodelist, pos, len_) = w.get_latex_nodes(pos=0)
 
@@ -40,33 +42,30 @@ def get_cites(tex_content: str) -> List[str]:
     return cites
 
 
-def get_all_cites_in_dir(dir_: str) -> List[str]:
-    """
-    Searches for all .tex files in `dir_` and extracts all cites.
+def get_all_cites_in_dir(tex_dir: str) -> Set[str]:
+    """Search for all .tex files in `tex_dir` and extracts all cites.
 
-    dir_: path to directory containing .tex files
+    tex_dir: path to directory containing .tex files
     return: list of cited references
     """
-    cites = []
-    all_tex_files = list(Path(dir_).rglob("*.tex"))
+    all_cites = []
+    all_tex_files = list(Path(tex_dir).rglob("*.tex"))
 
     for tex_file_name in all_tex_files:
         with open(tex_file_name) as file_:
             tex_content = file_.read()
-        cites.extend(get_cites(tex_content))
+        cites = get_cites_from_str(tex_content)
+        all_cites.extend(cites)
 
-    cites = list(set(cites))
-    return cites
+    return set(all_cites)
 
 
-def bibtex_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
-    """
-    Convert bibtex file to table.
+def bib_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
+    """Convert bibtex file to table.
 
     bibtex_file: path to bibtex file
     return: pandas DataFrame
     """
-
     bp = BibTexParser(interpolate_strings=False, ignore_nonstandard_types=False)
 
     with open(bibtex_file, encoding="utf8") as related_file:
@@ -92,67 +91,29 @@ def bibtex_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
     return bib_df
 
 
-def merge_cites_in_dir_with_bibtex(
-    bib_file: Optional[str] = None,
-    dir_: Optional[str] = None,
-    verify_urls: bool = False,
-    drop_cols: Optional[List[str]] = None,
-) -> pd.DataFrame:
-    """
-    Collects information about latex citations from a all .tex files in a directory and a bibtex file into one table.
-
-    :dir_: path to directory where I will search for .tex files
-    :bib_file: path to bibtex file
-    :verify_urls: sends an http request to each url in the `bib_file` and reports return status code and message via new columns
-    :drop_cols: list of columns to drop
-
-    :returns: pandas DataFrame containing all information from `bib_file`. Append commands to view the dataframe, e.g. `to_csv`
-
-    EXAMPLE usage in combination with visidata:
-
-        `bibtex_utils DIR BIBTEX_FILE to_csv | vd --filetype=csv`
-    """
-
-    logging.info("Extracting cites")
-    if dir_ is not None:
-        cites_df = pd.DataFrame({"ID": get_all_cites_in_dir(dir_)})
-        cites_df["cited"] = True
-    else:
-        cites_df = pd.DataFrame(columns=["ID"])
+def merge_bib_and_cites(bibtex_df: pd.DataFrame, cites: List[str]) -> pd.DataFrame:
+    """ """
+    cites_df = pd.DataFrame({"ID": cites})
+    cites_df["cited"] = True
     cites_df["ID"] = cites_df["ID"].astype(object)
-
-    logging.info("Loading bibtex database")
-    if bib_file is not None:
-        bib_df = bibtex_to_df(bib_file, verify_urls=verify_urls)
-    else:
-        bib_df = pd.DataFrame(columns=["ID"])
-
-    logging.info("Merging cites and bibtex-database")
-    merged_df = cites_df.merge(bib_df, on="ID", how="outer")
-
-    if "cited" in merged_df.columns:
-        merged_df["cited"] = merged_df["cited"].fillna(False)
-
-    if drop_cols is not None:
-        merged_df = merged_df.drop(columns=drop_cols)
+    merged_df = cites_df.merge(bibtex_df, on="ID", how="outer")
+    merged_df["cited"] = merged_df["cited"].fillna(False)
 
     return merged_df
 
 
-def cli(
-    bib_file: Optional[str] = None,
-    dir_: Optional[str] = None,
+def bib_to_csv(
+    bib_file: str,
+    tex_dir: Optional[str] = None,
     verify_urls=False,
     drop_cols: Optional[List[str]] = None,
 ) -> str:
-    """
-    Collects information about latex citations from (1) all .tex files in a directory and
-    (2) a bibtex file, and puts them into one table.
+    """Convert .bib file to csv. Optionally include citations from .tex files in a `tex_dir`.
 
-    :dir_: path to directory where to search for .tex files and citations inside them
     :bib_file: path to bibtex file
-    :verify_urls: sends an http request to each url in the `bib_file` and reports return status code and message via new columns
-    :drop_cols: comma-separated list of columns to drop
+    :tex_dir: path to directory containing .tex files with citations
+    :verify_urls: sends http requests urls mentioned in `bib_file` and report return code and message
+    :drop_cols: list of columns to drop
 
     :returns: table in CSV format containing all information from `bib_file`.
 
@@ -160,15 +121,22 @@ def cli(
 
         `bibtex_utils BIBTEX_FILE DIR | vd --filetype=csv`
     """
-    # in some cases, fire make drop_cols a tuple, which causes issues down the line
+    bib_df = bib_to_df(bib_file, verify_urls=verify_urls)
+
     if drop_cols is not None:
+        # in some cases, fire make drop_cols a tuple, which causes issues down the line
         drop_cols = list(drop_cols)
-    return merge_cites_in_dir_with_bibtex(bib_file, dir_, verify_urls, drop_cols).to_csv(
-        index=False
-    )
+        bib_df = bib_df.drop(columns=drop_cols)
+
+    if tex_dir is not None:
+        df = bib_df
+    else:
+        cites = list(get_all_cites_in_dir(tex_dir))
+        df = merge_bib_and_cites(bib_df, cites)
+
+    return df.to_csv(index=False)
 
 
-#
-#
-# if __name__ == "__main__":
-#     Fire(cli)
+def main():
+    exposed_functions = [bib_to_csv, get_all_cites_in_dir]
+    Fire({func.__name__: func for func in exposed_functions})
