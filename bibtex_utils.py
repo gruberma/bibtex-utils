@@ -9,7 +9,13 @@ from fire import Fire
 
 import pandas as pd
 from bibtexparser.bparser import BibTexParser
-from pylatexenc.latexwalker import LatexWalker, LatexEnvironmentNode, LatexMacroNode, LatexCharsNode, LatexCommentNode
+from pylatexenc.latexwalker import (
+    LatexWalker,
+    LatexEnvironmentNode,
+    LatexMacroNode,
+    LatexCharsNode,
+    LatexCommentNode,
+)
 
 
 def get_cites(tex_content: str) -> List[str]:
@@ -23,7 +29,7 @@ def get_cites(tex_content: str) -> List[str]:
 
     cites = []
     for node in nodelist:
-        if isinstance(node, LatexMacroNode) and node.macroname=="cite":
+        if isinstance(node, LatexMacroNode) and node.macroname == "cite":
             args = node.nodeargd.argnlist[3].nodelist
             for arg in args:
                 if isinstance(arg, LatexCharsNode) and not isinstance(arg, LatexCommentNode):
@@ -70,7 +76,9 @@ def bibtex_to_df(bibtex_file: str, *, verify_urls=False) -> pd.DataFrame:
     if verify_urls:
         logging.info("Verifing URLs")
         bib_df["url_response"] = bib_df["url"].dropna().apply(requests.get)
-        bib_df["url_response_status"] = bib_df["url_response"].dropna().apply(lambda x: x.status_code)
+        bib_df["url_response_status"] = (
+            bib_df["url_response"].dropna().apply(lambda x: x.status_code)
+        )
         bib_df["url_response_content"] = bib_df["url_response"].dropna().apply(lambda x: x._content)
 
     # -- Reorder cols
@@ -88,7 +96,7 @@ def merge_cites_in_dir_with_bibtex(
     bib_file: Optional[str] = None,
     dir_: Optional[str] = None,
     verify_urls: bool = False,
-    drop_cols: Optional[List[str]] = None
+    drop_cols: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
     Collects information about latex citations from a all .tex files in a directory and a bibtex file into one table.
@@ -135,7 +143,7 @@ def cli(
     bib_file: Optional[str] = None,
     dir_: Optional[str] = None,
     verify_urls=False,
-    drop_cols: Optional[List[str]] = None
+    drop_cols: Optional[List[str]] = None,
 ) -> str:
     """
     Collects information about latex citations from (1) all .tex files in a directory and
@@ -155,7 +163,11 @@ def cli(
     # in some cases, fire make drop_cols a tuple, which causes issues down the line
     if drop_cols is not None:
         drop_cols = list(drop_cols)
-    return merge_cites_in_dir_with_bibtex(bib_file, dir_, verify_urls, drop_cols).to_csv(index=False)
+    return merge_cites_in_dir_with_bibtex(bib_file, dir_, verify_urls, drop_cols).to_csv(
+        index=False
+    )
+
+
 #
 #
 # if __name__ == "__main__":
